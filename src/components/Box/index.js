@@ -52,7 +52,7 @@ const Box = styled.div`
     padding: 8px 12px;
     color: #FFFFFF;
     border-radius: 10000px;
-    background-color: #6F92BB;
+    background-color: #4169E1;
   }
 `;
 
