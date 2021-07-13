@@ -6,7 +6,7 @@ Projeto da imersão REACT - Alura.
 ## Preview 
 
 
-![Alt text](/src/assets/imersao_react.png?raw=true "Alurakut")
+![Alt text](/src/assets/imersao_react.png "Alurakut")
 
 
 ## Como rodar a aplicação
