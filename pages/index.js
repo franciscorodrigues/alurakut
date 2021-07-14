@@ -7,7 +7,7 @@ import { ProfileRelationsBoxWrapper } from '../src/components/ProfileRelations'
 function ProfileSidebar(propriedades) {
 	// console.log(propriedades)
 	return (
-		<Box as="aside">
+		<Box as='aside'>
 			<img src={`https://github.com/${propriedades.githubUser}.png`} style={{ borderRadius: '8px' }} />
 			<hr />
 			<p>
@@ -22,13 +22,43 @@ function ProfileSidebar(propriedades) {
 	)
 }
 
+function ProfileRelationsBox(propriedades) {
+	const listaSeguidores = propriedades.items.slice(0, 6)
+	return (
+		<ProfileRelationsBoxWrapper>
+			<h2 className='smallTitle'>
+				{propriedades.title} ({propriedades.items.length})
+			</h2>
+			<ul>
+				{
+					listaSeguidores.map((seguidor) => {
+						return (
+							<li key={seguidor.id}>
+								<a href={`https://github.com/${seguidor.login}`}>
+									<img src={seguidor.avatar_url} />
+									<span>{seguidor.login}</span>
+								</a>
+							</li>
+						)
+					})
+				}
+			</ul>
+		</ProfileRelationsBoxWrapper>
+	)
+}
+
 export default function Home() {
 	// const comunidades = React.useState(['Alurakut'])
 	const usuarioAleatorio = 'franciscorodrigues'
 	const [comunidades, setComunidades] = React.useState([{
-		id: '1234567890234567890',
+		id: '1234567890',
 		title: 'Eu odeio acordar cedo',
 		image: 'https://alurakut.vercel.app/capa-comunidade-01.jpg'
+	},
+	{
+		id: '0987654321',
+		title: 'Mengão eterno',
+		image: 'https://logodetimes.com/times/flamengo/logo-flamengo-512.png'
 	}])
 	// const comunidades = ['Alurakut']
 	// const alteradorDeComunidades/setComunidades = comunidades[1];
@@ -43,6 +73,20 @@ export default function Home() {
 		'rafaballerini'
 	]
 	const pessoasFavs = pessoasFavoritas.slice(0, 6)
+
+	const [seguidores, setSeguidores] = React.useState([])
+	// 0 - Pegar os ados do github
+	React.useEffect(function () {
+		fetch('https://api.github.com/users/cleuton/followers')
+			.then(function (respostaDoServidor) {
+				return respostaDoServidor.json()
+			})
+			.then(function (respostaCompleta) {
+				setSeguidores(respostaCompleta)
+			})
+	}, [])
+
+	// console.log('seguidores antes do return', seguidores)
 	return (
 		<>
 			<AlurakutMenu />
@@ -99,6 +143,7 @@ export default function Home() {
 					</Box>
 				</div>
 				<div className='profileRelationsArea' style={{ gridArea: 'profileRelationsArea' }}>
+					<ProfileRelationsBox title='Seguidores' items={seguidores} />
 					<ProfileRelationsBoxWrapper>
 						<h2 className='smallTitle'>
 							Comunidades ({comunidades.length})
