@@ -50,18 +50,7 @@ function ProfileRelationsBox(propriedades) {
 export default function Home() {
 	// const comunidades = React.useState(['Alurakut'])
 	const usuarioAleatorio = 'franciscorodrigues'
-	const [comunidades, setComunidades] = React.useState([{
-		id: '1234567890',
-		title: 'Eu odeio acordar cedo',
-		image: 'https://alurakut.vercel.app/capa-comunidade-01.jpg'
-	},
-	{
-		id: '0987654321',
-		title: 'Mengão eterno',
-		image: 'https://logodetimes.com/times/flamengo/logo-flamengo-512.png'
-	}])
-	// const comunidades = ['Alurakut']
-	// const alteradorDeComunidades/setComunidades = comunidades[1];
+	const [comunidades, setComunidades] = React.useState([])
 
 	const pessoasFavoritas = [
 		'cleuton',
@@ -74,7 +63,9 @@ export default function Home() {
 	]
 	const pessoasFavs = pessoasFavoritas.slice(0, 6)
 
+	const [comentarios, setComentarios] = React.useState([])
 	const [seguidores, setSeguidores] = React.useState([])
+
 	// 0 - Pegar os ados do github
 	React.useEffect(function () {
 		fetch('https://api.github.com/users/cleuton/followers')
@@ -84,9 +75,58 @@ export default function Home() {
 			.then(function (respostaCompleta) {
 				setSeguidores(respostaCompleta)
 			})
+
+		// API GraphQL - comunidades
+		fetch('https://graphql.datocms.com/', {
+			method: 'POST',
+			headers: {
+				Authorization: 'f57d263efe914e2e12f8e509798426',
+				'Content-Type': 'application/json',
+				Accept: 'application/json'
+			},
+			body: JSON.stringify({
+				query: `query {
+					allCommunities {
+						id 
+						title
+						imageUrl
+						creatorSlug
+					}
+					}`
+			})
+		})
+			.then((response) => response.json())
+			.then((respostaCompleta) => {
+				const comunidadesVindasDoDato = respostaCompleta.data.allCommunities
+				// console.log(comunidadesVindasDoDato)
+				setComunidades(comunidadesVindasDoDato)
+			})
+
+		// comentarios
+		fetch('https://graphql.datocms.com/', {
+			method: 'POST',
+			headers: {
+				Authorization: 'f57d263efe914e2e12f8e509798426',
+				'Content-Type': 'application/json',
+				Accept: 'application/json'
+			},
+			body: JSON.stringify({
+				query: `query {
+					      allComments  {
+							usuario 
+							scraps
+						  }
+				}`
+			})
+		})
+			.then((response) => response.json())
+			.then((response) => {
+				const comentariosVindosDoDato = response.data.allComments
+				// console.log('comentariosVindosDoDato ' + comentariosVindosDoDato)
+				setComentarios(comentariosVindosDoDato)
+			})
 	}, [])
 
-	// console.log('seguidores antes do return', seguidores)
 	return (
 		<>
 			<AlurakutMenu />
@@ -108,16 +148,26 @@ export default function Home() {
 							e.preventDefault()
 							const dadosDoForm = new FormData(e.target)
 
-							// console.log('Campo: ', dadosDoForm.get('title'))
-							// console.log('Campo: ', dadosDoForm.get('image'))
-
 							const comunidade = {
-								id: new Date().toISOString(),
 								title: dadosDoForm.get('title'),
-								image: dadosDoForm.get('image')
+								imageUrl: dadosDoForm.get('image'),
+								creatorSlug: usuarioAleatorio
 							}
-							const comunidadesAtualizadas = [...comunidades, comunidade]
-							setComunidades(comunidadesAtualizadas)
+
+							fetch('/api/comunidades', {
+								method: 'POST',
+								headers: {
+									'Content-Type': 'application/json'
+								},
+								body: JSON.stringify(comunidade)
+							})
+								.then(async (response) => {
+									const dados = await response.json()
+									// console.log(dados.registroCriado)
+									const comunidade = dados.registroCriado
+									const comunidadesAtualizadas = [...comunidades, comunidade]
+									setComunidades(comunidadesAtualizadas)
+								})
 						}}
 						>
 							<div>
@@ -141,6 +191,72 @@ export default function Home() {
 							</button>
 						</form>
 					</Box>
+					<Box>
+						<h2>Comentários ({comentarios.length})</h2>
+						<form onSubmit={(e) => {
+							e.preventDefault()
+							const dadosDoForm = new FormData(e.target)
+
+							const comentario = {
+								usuario: dadosDoForm.get('usuario'),
+								scraps: dadosDoForm.get('scraps')
+							}
+
+							fetch('/api/comentarios', {
+								method: 'POST',
+								headers: {
+									'Content-Type': 'application/json'
+								},
+								body: JSON.stringify(comentario)
+							})
+								.then(async (response) => {
+									const dados = await response.json()
+									// console.log(dados.registroCriado)
+									const comentario = dados.registroCriado
+									const comentariosAtuais = [...comentarios, comentario]
+									setComentarios(comentariosAtuais)
+								})
+						}}
+						>
+							<div>
+								<input
+									placeholder='Entre com o nome do usuário'
+									name='usuario'
+									aria-label='Qual vai ser o nome do usuário?'
+									type='text'
+								/>
+							</div>
+							<div>
+								<input
+									placeholder='Entre com um comentário'
+									name='scraps'
+									type='text'
+									aria-label='Deixe seu comentário'
+								/>
+							</div>
+
+							<button>
+								Enviar comentário
+							</button>
+						</form>
+
+						{comentarios.map((comentario) => {
+							return (
+								<div>
+									<h1 className='subTitle' />
+									<ul style={{ listStyle: 'none' }}>
+										<li>
+											<div style={{ border: '1px solid #AAAAAA', borderRadius: '40px', padding: '10px' }}>
+												<h4>{comentario.usuario}</h4>
+												<h5>{comentario.scraps}</h5>
+											</div>
+										</li>
+									</ul>
+								</div>
+							)
+						})}
+
+					</Box>
 				</div>
 				<div className='profileRelationsArea' style={{ gridArea: 'profileRelationsArea' }}>
 					<ProfileRelationsBox title='Seguidores' items={seguidores} />
@@ -152,8 +268,8 @@ export default function Home() {
 							{comunidades.map((itemAtual) => {
 								return (
 									<li key={itemAtual.id}>
-										<a href={`/users/${itemAtual.title}`}>
-											<img src={itemAtual.image} />
+										<a href={`/communities/${itemAtual.id}`}>
+											<img src={itemAtual.imageUrl} />
 											<span>{itemAtual.title}</span>
 										</a>
 									</li>
