@@ -35,11 +35,13 @@ export function AlurakutMenu({ githubUser }) {
 				</nav>
 
 				<nav>
-					<a href="/logout">
+					<a href={`/login`} onClick={(e) => {
+						nookies.destroy(null, 'USER_TOKEN')
+					}}>
 						Sair
 					</a>
 					<div>
-						<input placeholder='Pesquisar no Orkut' />
+						<input placeholder='Pesquisar no Alurakut' />
 					</div>
 				</nav>
 

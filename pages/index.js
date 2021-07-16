@@ -1,4 +1,6 @@
 import React from 'react'
+import nookies from 'nookies'
+import jwt from 'jsonwebtoken'
 import MainGrid from '../src/components/MainGrid'
 import Box from '../src/components/Box'
 import { AlurakutMenu, AlurakutProfileSidebarMenuDefault, OrkutNostalgicIconSet } from '../src/lib/AlurakutCommons'
@@ -47,9 +49,9 @@ function ProfileRelationsBox(propriedades) {
 	)
 }
 
-export default function Home() {
+export default function Home(props) {
 	// const comunidades = React.useState(['Alurakut'])
-	const usuarioAleatorio = 'franciscorodrigues'
+	const usuarioAleatorio = props.githubUser // == null ? 'franciscorodrigues' : props.githubUser
 	const [comunidades, setComunidades] = React.useState([])
 
 	const pessoasFavoritas = [
@@ -66,7 +68,7 @@ export default function Home() {
 	const [comentarios, setComentarios] = React.useState([])
 	const [seguidores, setSeguidores] = React.useState([])
 
-	// 0 - Pegar os ados do github
+	// 0 - Pegar os dados do github
 	React.useEffect(function () {
 		fetch('https://api.github.com/users/cleuton/followers')
 			.then(function (respostaDoServidor) {
@@ -138,7 +140,7 @@ export default function Home() {
 				<div className='welcomeArea' style={{ gridArea: 'welcomeArea' }}>
 					<Box>
 						<h1 className='title'>
-							Bem vindo(a)
+							Bem vindo(a), {usuarioAleatorio}!
 						</h1>
 						<OrkutNostalgicIconSet />
 					</Box>
@@ -201,6 +203,9 @@ export default function Home() {
 								usuario: dadosDoForm.get('usuario'),
 								scraps: dadosDoForm.get('scraps')
 							}
+							//limpar campos
+							e.target[0].value = ''
+							e.target[1].value = ''
 
 							fetch('/api/comentarios', {
 								method: 'POST',
@@ -211,7 +216,6 @@ export default function Home() {
 							})
 								.then(async (response) => {
 									const dados = await response.json()
-									// console.log(dados.registroCriado)
 									const comentario = dados.registroCriado
 									const comentariosAtuais = [...comentarios, comentario]
 									setComentarios(comentariosAtuais)
@@ -242,12 +246,13 @@ export default function Home() {
 
 						{comentarios.map((comentario) => {
 							return (
-								<div>
+								<div id='comment'>
 									<h1 className='subTitle' />
 									<ul style={{ listStyle: 'none' }}>
 										<li>
 											<div style={{ border: '1px solid #AAAAAA', borderRadius: '40px', padding: '10px' }}>
-												<h4>{comentario.usuario}</h4>
+												<img title={`https://github.com/${comentario.usuario}`} style={{ borderRadius: '10px', width: '30px' }} src={`https://github.com/${comentario.usuario}.png`} />
+
 												<h5>{comentario.scraps}</h5>
 											</div>
 										</li>
@@ -298,4 +303,33 @@ export default function Home() {
 			</MainGrid>
 		</>
 	)
+}
+
+export async function getServerSideProps(context) {
+	const cookies = nookies.get(context)
+	const token = cookies.USER_TOKEN
+	// console.log('getServerSideProps-token ' + token)
+	const { isAuthenticated } = await fetch('https://alurakut.vercel.app/api/auth', {
+		headers: {
+			Authorization: token
+		}
+	})
+		.then((resposta) => resposta.json())
+
+	// console.log('isAuthenticated ' + isAuthenticated)
+	if (isAuthenticated) {
+		return {
+			redirect: {
+				destination: '/login',
+				permanent: false,
+			}
+		}
+	}
+
+	const { githubUser } = jwt.decode(token)
+	return {
+		props: {
+			githubUser
+		}
+	}
 }
